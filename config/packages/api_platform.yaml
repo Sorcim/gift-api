@@ -1,0 +1,12 @@
+api_platform:
+    title: 'Gift API'
+    version: '1.0.0'
+    formats:
+        json: ['application/json']
+    error_formats:
+        json: ['application/problem+json']
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+        pagination_items_per_page: 30
