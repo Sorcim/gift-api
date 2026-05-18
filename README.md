@@ -12,26 +12,50 @@ API REST du projet Gift — application de liste de cadeaux pour couple.
 
 ## Prérequis
 
-- PHP 8.3+
-- Composer 2.x
-- Docker & Docker Compose (pour l'environnement local — Story 1.2)
+- Docker Desktop 4.x+ et Docker Compose v2
+- Les deux repos `gift-api` et `gift-frontend` doivent être dans des répertoires frères :
+  ```
+  ~/dev/
+    gift-api/       ← ce repo
+    gift-frontend/  ← frontend (référencé via ../gift-frontend)
+  ```
 
-## Démarrage rapide
+## Démarrage rapide avec Docker
 
 ```bash
-# Installer les dépendances
-composer install
+# 1. Copier et configurer les variables d'environnement locales
+cp .env.local.example .env.local
+# Éditer .env.local avec vos valeurs (optionnel — les défauts suffisent pour démarrer)
 
-# Copier et configurer les variables d'environnement
-cp .env .env.local
-# Éditer .env.local avec vos valeurs locales
+# 2. Démarrer tous les services (api, frontend, db)
+make up
+# ou : docker compose up --build -d
 
-# Vider le cache
-php bin/console cache:clear
+# 3. Faire confiance au certificat Caddy (premier démarrage, macOS uniquement)
+# La commande suivante exporte le CA local de Caddy et l'ajoute au Keychain macOS :
+docker compose cp api:/data/caddy/pki/authorities/local/root.crt ./caddy-local-ca.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./caddy-local-ca.crt
+# ℹ️  `docker compose exec api caddy trust` ne fait confiance que dans le conteneur, pas sur l'hôte.
 
-# Démarrer avec Docker Compose (Story 1.2)
-docker compose up
+# Services disponibles :
+# - API Symfony : https://localhost (HTTPS auto-signé)
+# - Frontend Next.js : http://localhost:3000
+# - PostgreSQL : localhost:5432 (via compose.override.yaml)
 ```
+
+## Commandes Make
+
+| Commande | Description |
+|---|---|
+| `make up` | Démarrer tous les services (`--build -d`) |
+| `make down` | Arrêter les services |
+| `make logs` | Suivre les logs en temps réel |
+| `make shell` | Ouvrir un shell dans le conteneur `api` |
+| `make migrate` | Lancer les migrations Doctrine |
+| `make console c="cache:clear"` | Exécuter une commande Symfony |
+| `make reset` | ⚠️ Détruire **tous les volumes** (données BDD perdues) et redémarrer |
+
+## Variables d'environnement
 
 ## Structure
 

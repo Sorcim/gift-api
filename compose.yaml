@@ -1,11 +1,58 @@
-
 services:
-###> doctrine/doctrine-bundle ###
-  database:
+  api:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+      target: dev
+    environment:
+      SERVER_NAME: "https://localhost, http://localhost"
+      APP_ENV: ${APP_ENV:-dev}
+      APP_SECRET: ${APP_SECRET:-changeme-dev-secret-minimum-32-chars}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://app:!ChangeMe!@db:5432/app?serverVersion=16&charset=utf8}
+      SESSION_DSN: ${SESSION_DSN:-pgsql:host=db;port=5432;dbname=app;user=app;password=!ChangeMe!}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-'^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$'}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
+    volumes:
+      - .:/app
+      - /app/var/cache
+      - vendor_data:/app/vendor
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/ -o /dev/null || curl -skf https://localhost/ -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../gift-frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: https://localhost
+      NEXT_API_URL: http://api
+      WATCHPACK_POLLING: "true"
+      NODE_ENV: development
+    volumes:
+      - ../gift-frontend/src:/app/src
+      - ../gift-frontend/public:/app/public
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  db:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
       POSTGRES_USER: ${POSTGRES_USER:-app}
     healthcheck:
@@ -15,11 +62,7 @@ services:
       start_period: 60s
     volumes:
       - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
 
 volumes:
-###> doctrine/doctrine-bundle ###
   database_data:
-###< doctrine/doctrine-bundle ###
+  vendor_data:

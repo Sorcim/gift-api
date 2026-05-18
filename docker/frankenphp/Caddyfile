@@ -1,0 +1,16 @@
+{
+    # Mode debug pour les logs en développement
+    debug
+    # Génère un certificat auto-signé de confiance locale
+    local_certs
+}
+
+localhost {
+    tls internal
+
+    root * /app/public
+    encode zstd br gzip
+
+    # FrankenPHP PHP handler
+    php_server
+}

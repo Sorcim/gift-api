@@ -1,0 +1,36 @@
+# Surcharge staging
+# Usage : docker compose -f compose.yaml -f compose.staging.yaml up -d
+# Les valeurs REPLACE_ME sont à définir dans .env.staging.local (gitignored)
+services:
+  api:
+    build:
+      target: production
+    image: ghcr.io/${GITHUB_OWNER}/gift-api:main
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      SERVER_NAME: ${SERVER_NAME}
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_DSN: ${SESSION_DSN}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET}
+    volumes: []
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/${GITHUB_OWNER}/gift-frontend:main
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${SERVER_NAME}
+      NEXT_API_URL: http://api
+    volumes: []
+    restart: unless-stopped
+
+  db:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: unless-stopped
